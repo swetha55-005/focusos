@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+
 import { motion, AnimatePresence } from 'framer-motion'
 
 function AIPage() {
@@ -12,7 +13,6 @@ function AIPage() {
   const [loading, setLoading] = useState(false)
   const bottomRef = useRef(null)
 
-  // Auto scroll to bottom when new message appears
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
@@ -26,25 +26,32 @@ function AIPage() {
     setLoading(true)
 
     try {
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${import.meta.env.VITE_OPENAI_API_KEY}`,
-        },
-        body: JSON.stringify({
-          model: 'gpt-4o-mini',
-          messages: [
-            {
-              role: 'system',
-              content: 'You are FocusOS AI, a helpful productivity assistant for students and professionals. Help users manage tasks, plan their day, study better, and stay focused. Keep answers concise and actionable.',
+      // Build conversation history for Gemini
+      const history = messages
+        .filter(m => m.role !== 'system')
+        .map(m => ({
+          role: m.role === 'assistant' ? 'model' : 'user',
+          parts: [{ text: m.content }],
+        }))
+
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${import.meta.env.VITE_GEMINI_API_KEY}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            system_instruction: {
+              parts: [{
+                text: 'You are FocusOS AI, a helpful productivity assistant for students and professionals. Help users manage tasks, plan their day, study better, and stay focused. Keep answers concise and actionable.'
+              }]
             },
-            ...messages,
-            userMessage,
-          ],
-          max_tokens: 500,
-        }),
-      })
+            contents: [
+              ...history,
+              { role: 'user', parts: [{ text: input }] }
+            ],
+          }),
+        }
+      )
 
       const data = await response.json()
 
@@ -52,7 +59,7 @@ function AIPage() {
         throw new Error(data.error.message)
       }
 
-      const aiReply = data.choices[0].message.content
+      const aiReply = data.candidates[0].content.parts[0].text
       setMessages(prev => [...prev, { role: 'assistant', content: aiReply }])
 
     } catch (error) {
@@ -121,7 +128,6 @@ function AIPage() {
             </motion.div>
           )}
 
-          {/* Auto scroll anchor */}
           <div ref={bottomRef} />
         </div>
 
