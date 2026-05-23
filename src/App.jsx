@@ -5,6 +5,7 @@ import TasksPage from './pages/TasksPage'
 import AIPage from './pages/AIPage'
 import AnalyticsPage from './pages/AnalyticsPage'
 import NotesPage from './pages/NotesPage'
+import GoalsPage from './pages/GoalsPage'
 import AppLayout from './components/layout/AppLayout'
 
 function App() {
@@ -17,6 +18,7 @@ function App() {
         <Route path="/ai"         element={<AIPage />}         />
         <Route path="/analytics"  element={<AnalyticsPage />}  />
         <Route path="/notes"      element={<NotesPage />}      />
+        <Route path="/goals"      element={<GoalsPage />}      />
       </Route>
     </Routes>
   )
