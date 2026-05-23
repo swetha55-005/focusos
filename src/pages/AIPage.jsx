@@ -1,21 +1,15 @@
 import { useState, useRef, useEffect } from 'react'
-
 import { motion, AnimatePresence } from 'framer-motion'
 
 function AIPage() {
-  const [messages, setMessages] = useState([
-    {
-      role: 'assistant',
-      content: 'Hi! I am your FocusOS AI assistant 🤖 I can help you plan your day, break down tasks, suggest study strategies, or answer any questions. What do you need help with?',
-    },
-  ])
+  const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const bottomRef = useRef(null)
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
+  }, [messages, loading])
 
   const sendMessage = async () => {
     if (!input.trim() || loading) return
@@ -26,40 +20,32 @@ function AIPage() {
     setLoading(true)
 
     try {
-      // Build conversation history for Gemini
-      const history = messages
-        .filter(m => m.role !== 'system')
-        .map(m => ({
-          role: m.role === 'assistant' ? 'model' : 'user',
-          parts: [{ text: m.content }],
-        }))
-
       const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${import.meta.env.VITE_GEMINI_API_KEY}`,
+        'https://api.groq.com/openai/v1/chat/completions',
         {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${import.meta.env.VITE_GROQ_API_KEY}`,
+          },
           body: JSON.stringify({
-            system_instruction: {
-              parts: [{
-                text: 'You are FocusOS AI, a helpful productivity assistant for students and professionals. Help users manage tasks, plan their day, study better, and stay focused. Keep answers concise and actionable.'
-              }]
-            },
-            contents: [
-              ...history,
-              { role: 'user', parts: [{ text: input }] }
+            model: 'llama3-8b-8192',
+            messages: [
+              {
+                role: 'system',
+                content: 'You are FocusOS AI, a helpful productivity assistant for students. Be concise and friendly.',
+              },
+              ...messages.slice(-4),
+              userMessage,
             ],
+            max_tokens: 500,
           }),
         }
       )
 
       const data = await response.json()
-
-      if (data.error) {
-        throw new Error(data.error.message)
-      }
-
-      const aiReply = data.candidates[0].content.parts[0].text
+      if (data.error) throw new Error(data.error.message)
+      const aiReply = data.choices[0].message.content
       setMessages(prev => [...prev, { role: 'assistant', content: aiReply }])
 
     } catch (error) {
@@ -67,7 +53,7 @@ function AIPage() {
         ...prev,
         {
           role: 'assistant',
-          content: '⚠️ Sorry, I could not connect right now. Please check your API key and try again.',
+          content: '⚠️ Sorry, I could not connect right now. Please try again.',
         },
       ])
     } finally {
@@ -89,6 +75,14 @@ function AIPage() {
 
         {/* Messages */}
         <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-4">
+
+          {/* Welcome message — always shown */}
+          <div className="flex justify-start">
+            <div className="bg-[#1A1A24] text-slate-200 border border-white/10 px-4 py-3 rounded-2xl rounded-bl-sm text-sm leading-relaxed max-w-xl">
+              Hi! I am your FocusOS AI assistant 🤖 I can help you plan your day, break down tasks, suggest study strategies, or answer any questions. What do you need help with?
+            </div>
+          </div>
+
           <AnimatePresence>
             {messages.map((msg, index) => (
               <motion.div
@@ -147,7 +141,7 @@ function AIPage() {
             disabled={loading || !input.trim()}
             className="bg-indigo-500 hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed text-white px-5 py-3 rounded-xl text-sm font-medium transition-colors duration-200"
           >
-            Send
+            {loading ? '...' : 'Send'}
           </button>
         </div>
 

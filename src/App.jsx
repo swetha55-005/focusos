@@ -2,7 +2,6 @@ import { Routes, Route } from 'react-router-dom'
 import LandingPage from './pages/LandingPage'
 import DashboardPage from './pages/DashboardPage'
 import TasksPage from './pages/TasksPage'
-import AIPage from './pages/AIPage'
 import AnalyticsPage from './pages/AnalyticsPage'
 import NotesPage from './pages/NotesPage'
 import GoalsPage from './pages/GoalsPage'
@@ -15,7 +14,6 @@ function App() {
       <Route element={<AppLayout />}>
         <Route path="/dashboard"  element={<DashboardPage />}  />
         <Route path="/tasks"      element={<TasksPage />}      />
-        <Route path="/ai"         element={<AIPage />}         />
         <Route path="/analytics"  element={<AnalyticsPage />}  />
         <Route path="/notes"      element={<NotesPage />}      />
         <Route path="/goals"      element={<GoalsPage />}      />
